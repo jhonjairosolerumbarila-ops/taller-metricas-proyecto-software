@@ -1,0 +1,41 @@
+name: Export issues metrics
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: read
+
+jobs:
+  export-issues:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Export issues to JSON
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p data
+          gh issue list --state all --limit 100 \
+            --json number,title,body,labels,state,createdAt,closedAt,updatedAt,url \
+            > data/issues.json
+
+      - name: Build metrics
+        run: |
+          python scripts/build_metrics.py
+
+      - name: Show metrics
+        run: |
+          cat docs/metrics.json
+
+      - name: Upload generated files
+        uses: actions/upload-artifact@v4
+        with:
+          name: issues-metrics
+          path: |
+            data/issues.json
+            docs/metrics.json
