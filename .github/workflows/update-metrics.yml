@@ -10,6 +10,7 @@ on:
 permissions:
   contents: write
   issues: read
+  actions: read
 
 jobs:
   update-metrics:
@@ -125,7 +126,7 @@ jobs:
           </html>
           EOF
 
-      - name: Guardar métricas y dashboard generados
+      - name: Guardar métricas y dashboard en el repositorio
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
@@ -135,3 +136,12 @@ jobs:
           git diff --staged --quiet || git commit -m "chore: actualizar métricas automáticas"
 
           git push
+
+      - name: Subir artefacto del dashboard
+        uses: actions/upload-artifact@v4
+        with:
+          name: dashboard-metricas-proyecto
+          path: |
+            docs/index.html
+            docs/metrics.json
+            data/issues.json
