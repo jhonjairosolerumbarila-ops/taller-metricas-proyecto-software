@@ -43,60 +43,60 @@ jobs:
           metrics = json.loads(metrics_path.read_text(encoding="utf-8"))
           metrics_json = json.dumps(metrics, ensure_ascii=False)
 
-          html = f"""<!DOCTYPE html>
+          html = """<!DOCTYPE html>
           <html lang="es">
           <head>
               <meta charset="UTF-8">
               <title>Dashboard de Métricas del Proyecto</title>
 
               <style>
-                  body {{
+                  body {
                       font-family: Arial, sans-serif;
                       margin: 40px;
                       background: #f6f8fa;
                       color: #24292f;
-                  }}
+                  }
 
-                  h1 {{
+                  h1 {
                       margin-bottom: 10px;
-                  }}
+                  }
 
-                  .grid {{
+                  .grid {
                       display: grid;
                       grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
                       gap: 16px;
                       margin-top: 24px;
-                  }}
+                  }
 
-                  .card {{
+                  .card {
                       background: white;
                       border-radius: 12px;
                       padding: 20px;
                       box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-                  }}
+                  }
 
-                  .label {{
+                  .label {
                       font-size: 14px;
                       color: #57606a;
-                  }}
+                  }
 
-                  .value {{
+                  .value {
                       font-size: 32px;
                       font-weight: bold;
                       margin-top: 8px;
-                  }}
+                  }
 
-                  .risk-Alto {{
+                  .risk-Alto {
                       color: #cf222e;
-                  }}
+                  }
 
-                  .risk-Medio {{
+                  .risk-Medio {
                       color: #bf8700;
-                  }}
+                  }
 
-                  .risk-Bajo {{
+                  .risk-Bajo {
                       color: #1a7f37;
-                  }}
+                  }
               </style>
           </head>
 
@@ -108,9 +108,9 @@ jobs:
               <div class="grid" id="metrics"></div>
 
               <script>
-                  const data = {metrics_json};
+                  const data = __METRICS_JSON__;
 
-                  const labels = {{
+                  const labels = {
                       total_issues: "Total de tareas",
                       closed_issues: "Tareas cerradas",
                       open_issues: "Tareas abiertas",
@@ -128,34 +128,40 @@ jobs:
                       velocity_story_points: "Velocity",
                       overdue_open_issues: "Tareas vencidas",
                       risk_level: "Nivel de riesgo"
-                  }};
+                  };
 
                   const container = document.getElementById("metrics");
 
-                  Object.entries(labels).forEach(([key, label]) => {{
-                      const card = document.createElement("div");
+                  Object.entries(labels).forEach(function(entry) {
+                      const key = entry[0];
+                      const label = entry[1];
                       const value = data[key] ?? "N/A";
 
+                      const card = document.createElement("div");
                       card.className = "card";
 
-                      if (key === "risk_level") {{
-                          card.innerHTML = `
-                              <div class="label">${{label}}</div>
-                              <div class="value risk-${{value}}">${{value}}</div>
-                          `;
-                      }} else {{
-                          card.innerHTML = `
-                              <div class="label">${{label}}</div>
-                              <div class="value">${{value}}</div>
-                          `;
-                      }}
+                      const labelDiv = document.createElement("div");
+                      labelDiv.className = "label";
+                      labelDiv.textContent = label;
 
+                      const valueDiv = document.createElement("div");
+                      valueDiv.className = "value";
+                      valueDiv.textContent = value;
+
+                      if (key === "risk_level") {
+                          valueDiv.classList.add("risk-" + value);
+                      }
+
+                      card.appendChild(labelDiv);
+                      card.appendChild(valueDiv);
                       container.appendChild(card);
-                  }});
+                  });
               </script>
           </body>
           </html>
           """
+
+          html = html.replace("__METRICS_JSON__", metrics_json)
 
           html_path.parent.mkdir(parents=True, exist_ok=True)
           html_path.write_text(html, encoding="utf-8")
