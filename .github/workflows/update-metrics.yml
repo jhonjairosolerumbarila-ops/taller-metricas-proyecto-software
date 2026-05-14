@@ -10,7 +10,6 @@ on:
 permissions:
   contents: write
   issues: read
-  actions: read
 
 jobs:
   update-metrics:
@@ -32,48 +31,72 @@ jobs:
       - name: Calcular métricas
         run: python scripts/build_metrics.py
 
-      - name: Crear dashboard HTML
+      - name: Crear dashboard HTML autosuficiente
         run: |
-          mkdir -p docs
+          python - <<'PY'
+          import json
+          from pathlib import Path
 
-          cat > docs/index.html <<'EOF'
-          <!DOCTYPE html>
+          metrics_path = Path("docs/metrics.json")
+          html_path = Path("docs/index.html")
+
+          metrics = json.loads(metrics_path.read_text(encoding="utf-8"))
+          metrics_json = json.dumps(metrics, ensure_ascii=False)
+
+          html = f"""<!DOCTYPE html>
           <html lang="es">
           <head>
               <meta charset="UTF-8">
               <title>Dashboard de Métricas del Proyecto</title>
 
               <style>
-                  body {
+                  body {{
                       font-family: Arial, sans-serif;
                       margin: 40px;
                       background: #f6f8fa;
                       color: #24292f;
-                  }
+                  }}
 
-                  h1 {
+                  h1 {{
                       margin-bottom: 10px;
-                  }
+                  }}
 
-                  .grid {
+                  .grid {{
                       display: grid;
                       grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
                       gap: 16px;
                       margin-top: 24px;
-                  }
+                  }}
 
-                  .card {
+                  .card {{
                       background: white;
                       border-radius: 12px;
                       padding: 20px;
                       box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-                  }
+                  }}
 
-                  .value {
+                  .label {{
+                      font-size: 14px;
+                      color: #57606a;
+                  }}
+
+                  .value {{
                       font-size: 32px;
                       font-weight: bold;
                       margin-top: 8px;
-                  }
+                  }}
+
+                  .risk-Alto {{
+                      color: #cf222e;
+                  }}
+
+                  .risk-Medio {{
+                      color: #bf8700;
+                  }}
+
+                  .risk-Bajo {{
+                      color: #1a7f37;
+                  }}
               </style>
           </head>
 
@@ -85,13 +108,16 @@ jobs:
               <div class="grid" id="metrics"></div>
 
               <script>
-                  const labels = {
+                  const data = {metrics_json};
+
+                  const labels = {{
                       total_issues: "Total de tareas",
                       closed_issues: "Tareas cerradas",
                       open_issues: "Tareas abiertas",
                       completion_rate_percent: "Avance (%)",
                       total_bugs: "Bugs totales",
                       open_bugs: "Bugs abiertos",
+                      closed_bugs: "Bugs cerrados",
                       average_resolution_hours: "Tiempo promedio de resolución (h)",
                       estimated_hours: "Horas estimadas",
                       actual_hours: "Horas reales",
@@ -102,29 +128,38 @@ jobs:
                       velocity_story_points: "Velocity",
                       overdue_open_issues: "Tareas vencidas",
                       risk_level: "Nivel de riesgo"
-                  };
+                  }};
 
-                  fetch("metrics.json")
-                      .then((response) => response.json())
-                      .then((data) => {
-                          const container = document.getElementById("metrics");
+                  const container = document.getElementById("metrics");
 
-                          Object.entries(labels).forEach(([key, label]) => {
-                              const card = document.createElement("div");
+                  Object.entries(labels).forEach(([key, label]) => {{
+                      const card = document.createElement("div");
+                      const value = data[key] ?? "N/A";
 
-                              card.className = "card";
-                              card.innerHTML = `
-                                  <div>${label}</div>
-                                  <div class="value">${data[key]}</div>
-                              `;
+                      card.className = "card";
 
-                              container.appendChild(card);
-                          });
-                      });
+                      if (key === "risk_level") {{
+                          card.innerHTML = `
+                              <div class="label">${{label}}</div>
+                              <div class="value risk-${{value}}">${{value}}</div>
+                          `;
+                      }} else {{
+                          card.innerHTML = `
+                              <div class="label">${{label}}</div>
+                              <div class="value">${{value}}</div>
+                          `;
+                      }}
+
+                      container.appendChild(card);
+                  }});
               </script>
           </body>
           </html>
-          EOF
+          """
+
+          html_path.parent.mkdir(parents=True, exist_ok=True)
+          html_path.write_text(html, encoding="utf-8")
+          PY
 
       - name: Guardar métricas y dashboard en el repositorio
         run: |
