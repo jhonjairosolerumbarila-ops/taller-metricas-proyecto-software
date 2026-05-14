@@ -30,10 +30,27 @@
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
         }
 
+        .label {
+            font-size: 14px;
+            color: #57606a;
+        }
+
         .value {
             font-size: 32px;
             font-weight: bold;
             margin-top: 8px;
+        }
+
+        .risk-Alto {
+            color: #cf222e;
+        }
+
+        .risk-Medio {
+            color: #bf8700;
+        }
+
+        .risk-Bajo {
+            color: #1a7f37;
         }
     </style>
 </head>
@@ -46,6 +63,8 @@
     <div class="grid" id="metrics"></div>
 
     <script>
+        const data = {"total_issues": 5, "closed_issues": 2, "open_issues": 3, "completion_rate_percent": 40.0, "total_bugs": 1, "open_bugs": 1, "closed_bugs": 0, "average_resolution_hours": 0.24, "estimated_hours": 10.0, "actual_hours": 10.0, "estimated_cost_usd": 200.0, "actual_cost_usd": 200.0, "cost_variance_usd": 0.0, "roi_percent": 200.0, "velocity_story_points": 3.0, "overdue_open_issues": 0, "risk_level": "Medio"};
+
         const labels = {
             total_issues: "Total de tareas",
             closed_issues: "Tareas cerradas",
@@ -53,6 +72,7 @@
             completion_rate_percent: "Avance (%)",
             total_bugs: "Bugs totales",
             open_bugs: "Bugs abiertos",
+            closed_bugs: "Bugs cerrados",
             average_resolution_hours: "Tiempo promedio de resolución (h)",
             estimated_hours: "Horas estimadas",
             actual_hours: "Horas reales",
@@ -65,23 +85,32 @@
             risk_level: "Nivel de riesgo"
         };
 
-        fetch("metrics.json")
-            .then((response) => response.json())
-            .then((data) => {
-                const container = document.getElementById("metrics");
+        const container = document.getElementById("metrics");
 
-                Object.entries(labels).forEach(([key, label]) => {
-                    const card = document.createElement("div");
+        Object.entries(labels).forEach(function(entry) {
+            const key = entry[0];
+            const label = entry[1];
+            const value = data[key] ?? "N/A";
 
-                    card.className = "card";
-                    card.innerHTML = `
-                        <div>${label}</div>
-                        <div class="value">${data[key]}</div>
-                    `;
+            const card = document.createElement("div");
+            card.className = "card";
 
-                    container.appendChild(card);
-                });
-            });
+            const labelDiv = document.createElement("div");
+            labelDiv.className = "label";
+            labelDiv.textContent = label;
+
+            const valueDiv = document.createElement("div");
+            valueDiv.className = "value";
+            valueDiv.textContent = value;
+
+            if (key === "risk_level") {
+                valueDiv.classList.add("risk-" + value);
+            }
+
+            card.appendChild(labelDiv);
+            card.appendChild(valueDiv);
+            container.appendChild(card);
+        });
     </script>
 </body>
 </html>
